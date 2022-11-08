@@ -108,24 +108,19 @@ app.get("/vote", function (req, res) {
     })
     .limit(4);
 });
-app.post("/result", async function (req, res) {
+app.post("/result", function (req, res) {
     med = req.body.option;
-    let finalVote = 0; 
     console.log(med);
-    await medicine.findOne({medicine: med}, function (err, meds) {
+    medicine.findOne({medicine: med}, function (err, meds) {
         if (err) {
             console.log(err);  
         } else {
-            finalVote = meds.vote + 1
-            console.log(finalVote);
+            meds.vote = meds.vote + 1
+            meds.save().then(savedDoc => {
+                savedDoc === meds; // true
+              });
         }
     })
-    console.log(finalVote);
-    medicine.findOneAndUpdate({medicine: med}, {vote: finalVote}, function (err, docs) {
-        if (err){
-            console.log(err)
-        }
-    });
 
 });
 app.get("/admin", function (req, res) {
@@ -135,7 +130,16 @@ app.post("/admin", function (req, res) {
     let country = req.body.Country
     console.log(country);
     const pythonProcess = spawn('python',["main.py"]);  
-    res.render("display");
+    medicine
+    .find({}, function(err, results) {
+      if (err) {
+        res.send(err);
+      } else {
+        res.render("display",{
+            results: results});
+      }
+    })
+    .limit(4);
     pythonProcess.stdout.on('data', (data) => {
             brandName = data.toString();
             console.log(brandName);
